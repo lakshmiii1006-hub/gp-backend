@@ -1,26 +1,46 @@
 import Testimonial from "../models/Testimonial.js";
 
-// CREATE
+// CREATE - Sets isApproved: false automatically
 export const createTestimonial = async (req, res) => {
   try {
-    const testimonial = await Testimonial.create(req.body);
+    const testimonial = await Testimonial.create({
+      ...req.body,
+      isApproved: false  // ✅ ALWAYS starts unapproved
+    });
     res.status(201).json(testimonial);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// GET ALL
+// GET ALL - ONLY APPROVED for public (homepage)
 export const getTestimonials = async (req, res) => {
   try {
-    const testimonials = await Testimonial.find();
+    const testimonials = await Testimonial.find({ isApproved: true })
+      .sort({ createdAt: -1 })
+      .limit(20)
+      .lean();
+    
     res.json(testimonials);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// APPROVE / DISAPPROVE
+// GET PENDING - Only for admin panel
+export const getPendingTestimonials = async (req, res) => {
+  try {
+    const testimonials = await Testimonial.find({ isApproved: false })
+      .sort({ createdAt: -1 })
+      .lean();
+    
+    res.json(testimonials);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// ✅ APPROVE TESTIMONIAL - MISSING FUNCTION ADDED
 export const approveTestimonial = async (req, res) => {
   try {
     const testimonial = await Testimonial.findByIdAndUpdate(
@@ -33,7 +53,10 @@ export const approveTestimonial = async (req, res) => {
       return res.status(404).json({ message: "Testimonial not found" });
     }
 
-    res.json(testimonial);
+    res.json({
+      message: "Testimonial approved successfully!",
+      testimonial
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -42,8 +65,13 @@ export const approveTestimonial = async (req, res) => {
 // DELETE
 export const deleteTestimonial = async (req, res) => {
   try {
-    await Testimonial.findByIdAndDelete(req.params.id);
-    res.json({ message: "Testimonial deleted" });
+    const testimonial = await Testimonial.findByIdAndDelete(req.params.id);
+    
+    if (!testimonial) {
+      return res.status(404).json({ message: "Testimonial not found" });
+    }
+    
+    res.json({ message: "Testimonial deleted successfully" });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
