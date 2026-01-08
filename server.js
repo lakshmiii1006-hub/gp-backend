@@ -43,7 +43,6 @@ const transporter = nodemailer.createTransport({
 io.on("connection", (socket) => {
   console.log("⚡ New client connected:", socket.id);
 
-  // USER ONLINE
   socket.on("user_online", async ({ email, name }) => {
     let contact = await Contact.findOne({ email });
 
@@ -61,7 +60,6 @@ io.on("connection", (socket) => {
     io.emit("user_status", { email, online: true });
   });
 
-  // SEND MESSAGE
   socket.on("send_message", async ({ email, text, sender }) => {
     const contact = await Contact.findOne({ email });
     if (!contact) return;
@@ -75,25 +73,22 @@ io.on("connection", (socket) => {
 
     contact.messages.push(message);
 
-    if (sender === "user") {
-      contact.unreadCount += 1;
-    }
+    if (sender === "user") contact.unreadCount += 1;
 
     await contact.save();
 
     io.emit("new_message", { email, message });
 
-    // EMAIL NOTIFICATION (admin replied while user offline)
-    if (sender === "admin" && !contact.isUserOnline) {
+    // SEND EMAIL if sender is admin (always)
+    if (sender === "admin") {
       await transporter.sendMail({
         to: contact.email,
-        subject: "📩 New Message from Support",
-        text: text,
+        subject: "📩 New Message from GP Flower Decorators",
+        text: `Hi ${contact.name},\n\nYou have a new message:\n"${text}"\n\n- GP Flower Decorators`,
       });
     }
   });
 
-  // READ RECEIPTS
   socket.on("message_read", async ({ email }) => {
     const contact = await Contact.findOne({ email });
     if (!contact) return;
@@ -106,11 +101,8 @@ io.on("connection", (socket) => {
     io.emit("read_update", { email });
   });
 
-  // DISCONNECT
   socket.on("disconnect", async () => {
     console.log("❌ Client disconnected:", socket.id);
-
-    // OPTIONAL: mark all users offline (simple version)
     await Contact.updateMany({}, { isUserOnline: false });
   });
 });
