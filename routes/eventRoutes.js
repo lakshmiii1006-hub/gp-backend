@@ -1,4 +1,5 @@
 import express from "express";
+import upload from "../middlewares/uploadMiddleware.js";
 import {
   createEvent,
   getEvents,
@@ -9,10 +10,12 @@ import {
 
 const router = express.Router();
 
-router.post("/", createEvent);
+// CREATE / UPDATE use multer
+router.post("/", upload.single("image"), createEvent);
+router.put("/:id", upload.single("image"), updateEvent);
+
 router.get("/", getEvents);
 router.get("/:id", getEventById);
-router.put("/:id", updateEvent);
 router.delete("/:id", deleteEvent);
 
 export default router;
