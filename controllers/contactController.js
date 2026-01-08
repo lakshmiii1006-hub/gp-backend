@@ -1,7 +1,7 @@
 import Contact from "../models/Contact.js";
 import nodemailer from "nodemailer";
 
-// Email transporter
+// Setup email transporter
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
@@ -14,9 +14,9 @@ const transporter = nodemailer.createTransport({
 export const createContact = async (req, res) => {
   try {
     const contact = await Contact.create(req.body);
-    const io = req.app.get("io");
 
-    // Real-time notification to admin
+    // Emit real-time notification to admin
+    const io = req.app.get("io");
     io.emit("new_contact", contact);
 
     res.status(201).json(contact);
@@ -35,13 +35,28 @@ export const getContacts = async (req, res) => {
   }
 };
 
-// UPDATE (mark read)
+// GET single message
+export const getContactById = async (req, res) => {
+  try {
+    const contact = await Contact.findById(req.params.id);
+    if (!contact) return res.status(404).json({ message: "Contact not found" });
+    res.json(contact);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// UPDATE message (mark as read or update content)
 export const updateContact = async (req, res) => {
   try {
     const contact = await Contact.findById(req.params.id);
     if (!contact) return res.status(404).json({ message: "Contact not found" });
 
-    contact.isRead = req.body.isRead ?? contact.isRead;
+    if (req.body.name) contact.name = req.body.name;
+    if (req.body.email) contact.email = req.body.email;
+    if (req.body.message) contact.message = req.body.message;
+    if (req.body.isRead !== undefined) contact.isRead = req.body.isRead;
+
     await contact.save();
     res.json(contact);
   } catch (error) {
@@ -49,46 +64,48 @@ export const updateContact = async (req, res) => {
   }
 };
 
-// DELETE
+// DELETE message
 export const deleteContact = async (req, res) => {
   try {
     const contact = await Contact.findById(req.params.id);
     if (!contact) return res.status(404).json({ message: "Contact not found" });
 
-    await contact.deleteOne();
+    await contact.remove();
     res.json({ message: "Contact deleted successfully" });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// ADMIN reply
+// ADMIN replies to user
 export const replyContact = async (req, res) => {
   try {
     const contact = await Contact.findById(req.params.id);
     if (!contact) return res.status(404).json({ message: "Contact not found" });
 
-    const reply = { text: req.body.text, createdAt: new Date() };
+    const reply = {
+      text: req.body.text,
+      date: new Date(),
+    };
+
     contact.replies.push(reply);
     await contact.save();
 
     const io = req.app.get("io");
     io.emit("new_reply", { contactId: contact._id, reply, email: contact.email });
 
-    // Send email if user offline
-    if (contact.email) {
-      await transporter.sendMail({
-        from: process.env.EMAIL_USER,
-        to: contact.email,
-        subject: "Admin replied to your message",
-        html: `<p>Hello ${contact.name},</p>
-               <p>Admin replied: ${reply.text}</p>
-               <p>Visit the website to continue chatting.</p>`,
-      });
-    }
+    // Send email notification
+    await transporter.sendMail({
+      from: process.env.EMAIL_USER,
+      to: contact.email,
+      subject: "Admin replied to your message",
+      html: `<p>Hello ${contact.name},</p>
+             <p>Admin replied: ${reply.text}</p>
+             <p>Visit the website to continue chatting.</p>`,
+    });
 
     res.json(contact);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(400).json({ message: error.message });
   }
 };
