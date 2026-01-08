@@ -9,10 +9,13 @@ import {
 
 const router = express.Router();
 
-router.post("/", createTestimonial);                    // Public submit
-router.get("/", getTestimonials);                       // Public: approved only
-router.get("/pending", getPendingTestimonials);         // Admin: pending only
-router.put("/:id/approve", approveTestimonial);         // Admin approve
-router.delete("/:id", deleteTestimonial);               // Admin delete
+// PUBLIC ROUTES
+router.post("/", createTestimonial);        // Submit a testimonial (starts as unapproved)
+router.get("/", getTestimonials);           // Get only approved testimonials
+
+// ADMIN ROUTES
+router.get("/pending", getPendingTestimonials);    // Get pending testimonials
+router.put("/:id/approve", approveTestimonial);   // Approve testimonial
+router.delete("/:id", deleteTestimonial);        // Delete testimonial
 
 export default router;
