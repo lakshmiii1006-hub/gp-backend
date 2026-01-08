@@ -1,20 +1,27 @@
 import Contact from "../models/Contact.js";
+import nodemailer from "nodemailer";
 
-// CREATE contact message
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
+
+// Create user message
 export const createContact = async (req, res) => {
   try {
     const contact = await Contact.create(req.body);
-
     const io = req.app.get("io");
-    io.emit("new_contact", contact); // emit to admin panel
-
+    io.emit("new_contact", contact); // notify admin in real-time
     res.status(201).json(contact);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
 };
 
-// GET all messages
+// Get all messages
 export const getContacts = async (req, res) => {
   try {
     const contacts = await Contact.find().sort({ createdAt: -1 });
@@ -24,28 +31,44 @@ export const getContacts = async (req, res) => {
   }
 };
 
-// GET single message
-export const getContactById = async (req, res) => {
+// Admin replies
+export const replyContact = async (req, res) => {
   try {
     const contact = await Contact.findById(req.params.id);
     if (!contact) return res.status(404).json({ message: "Contact not found" });
+
+    const reply = { text: req.body.text, date: new Date() };
+    contact.replies.push(reply);
+    await contact.save();
+
+    const io = req.app.get("io");
+
+    // Real-time emit
+    io.emit("new_reply", { contactId: contact._id, reply, email: contact.email });
+
+    // Send email notification if user is offline
+    await transporter.sendMail({
+      from: process.env.EMAIL_USER,
+      to: contact.email,
+      subject: "Admin replied to your message",
+      html: `<p>Hello ${contact.name},</p>
+             <p>Admin replied: ${reply.text}</p>
+             <p>Visit the website to continue chatting.</p>`
+    });
+
     res.json(contact);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(400).json({ message: error.message });
   }
 };
 
-// UPDATE message (mark as read)
+// Update message (mark as read)
 export const updateContact = async (req, res) => {
   try {
     const contact = await Contact.findById(req.params.id);
     if (!contact) return res.status(404).json({ message: "Contact not found" });
 
-    if (req.body.name) contact.name = req.body.name;
-    if (req.body.email) contact.email = req.body.email;
-    if (req.body.message) contact.message = req.body.message;
     if (req.body.isRead !== undefined) contact.isRead = req.body.isRead;
-
     await contact.save();
     res.json(contact);
   } catch (error) {
@@ -53,7 +76,7 @@ export const updateContact = async (req, res) => {
   }
 };
 
-// DELETE message
+// Delete message
 export const deleteContact = async (req, res) => {
   try {
     const contact = await Contact.findById(req.params.id);
@@ -63,24 +86,5 @@ export const deleteContact = async (req, res) => {
     res.json({ message: "Contact deleted successfully" });
   } catch (error) {
     res.status(500).json({ message: error.message });
-  }
-};
-
-// ADMIN replies to user
-export const replyContact = async (req, res) => {
-  try {
-    const contact = await Contact.findById(req.params.id);
-    if (!contact) return res.status(404).json({ message: "Contact not found" });
-
-    const reply = { text: req.body.text };
-    contact.replies.push(reply);
-    await contact.save();
-
-    const io = req.app.get("io");
-    io.emit("new_reply", { contactId: contact._id, reply });
-
-    res.json(contact);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
   }
 };
