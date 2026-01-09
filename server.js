@@ -34,20 +34,7 @@ app.get("/", (req, res) => {
   res.send("🌸 Flower Backend API is running");
 });
 
-app.get("/test-email", async (req, res) => {
-  try {
-    await sendMail({
-      to: "gpflowerdecorators@gmail.com", // 👈 PUT YOUR REAL EMAIL
-      subject: "Resend Test Email",
-      html: "<h1>Resend is working 🎉</h1>",
-    });
 
-    res.send("✅ Email sent successfully");
-  } catch (error) {
-    console.error("❌ EMAIL ERROR:", error);
-    res.status(500).send("❌ Email failed");
-  }
-});
 
 
 /* ===================== DATABASE + SERVER ===================== */
