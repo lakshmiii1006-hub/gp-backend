@@ -15,13 +15,16 @@ export const createBooking = async (req, res) => {
   try {
     const booking = await Booking.create(req.body);
 
+    // ✅ FIXED: Convert ObjectId to string before slice
+    const bookingIdShort = booking._id.toString().slice(-6);
+
     // Email to ADMIN - New booking arrived
-    const adminEmailSubject = `🌸 New Booking Received - #${booking._id.slice(-6)}`;
+    const adminEmailSubject = `🌸 New Booking Received - #${bookingIdShort}`;
     const adminEmailBody = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2 style="color: #e91e63;">New Booking Alert! 🌸</h2>
         <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin: 20px 0;">
-          <p><strong>Booking ID:</strong> #${booking._id.slice(-6)}</p>
+          <p><strong>Booking ID:</strong> #${bookingIdShort}</p>
           <p><strong>Name:</strong> ${booking.name}</p>
           <p><strong>Email:</strong> ${booking.email}</p>
           <p><strong>Phone:</strong> ${booking.phone}</p>
@@ -33,7 +36,7 @@ export const createBooking = async (req, res) => {
     `;
 
     // Email to USER - Confirmation
-    const userEmailSubject = `✅ Booking Confirmed - #${booking._id.slice(-6)}`;
+    const userEmailSubject = `✅ Booking Confirmed - #${bookingIdShort}`;
     const userEmailBody = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; text-align: center;">
         <h1 style="color: #e91e63;">Booking Confirmed! 🌸✨</h1>
@@ -65,14 +68,16 @@ export const createBooking = async (req, res) => {
       })
     ]);
 
+    console.log(`✅ Booking created & emails sent: #${bookingIdShort}`);
     res.status(201).json(booking);
+
   } catch (error) {
     console.error('Booking error:', error);
     res.status(500).json({ message: error.message });
   }
 };
 
-// Rest of your functions remain the SAME...
+// Keep all other functions exactly the same...
 export const getBookings = async (req, res) => {
   try {
     const bookings = await Booking.find().sort({ createdAt: -1 });
