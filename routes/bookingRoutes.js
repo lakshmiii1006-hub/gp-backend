@@ -1,9 +1,14 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const Booking = require('../models/Booking'); // adjust path
-const emailjs = require('emailjs');
+import Booking from '../models/Booking.js'; 
+import emailjs from 'emailjs';
 
-// 👇 ADD YOUR APPROVE ROUTE HERE
+// Your existing POST route for creating bookings...
+router.post('/', async (req, res) => {
+  // your existing booking creation code
+});
+
+// 👇 ADD THIS NEW APPROVE ROUTE
 router.put('/:id/approve', async (req, res) => {
   try {
     const { id } = req.params;
@@ -34,5 +39,4 @@ router.put('/:id/approve', async (req, res) => {
   }
 });
 
-// Export router
-module.exports = router;
+export default router;  // ← THIS FIXES THE ERROR
