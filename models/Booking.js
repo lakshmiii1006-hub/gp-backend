@@ -1,51 +1,19 @@
-// models/Booking.js
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 
-const bookingSchema = new mongoose.Schema(
-  {
-    name: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    email: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    phone: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    service: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    date: {
-      type: Date,
-      required: true,
-    },
-    additionalDetails: {
-      type: String,
-      trim: true,
-    },
-    status: {
-      type: String,
-      enum: ["pending", "approved", "rejected"],
-      default: "pending",
-    },
-    read: {
-      type: Boolean,
-      default: false,
-    },
-    emailSent: {
-      type: Boolean,
-      default: false,
-    },
+const bookingSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  email: { type: String, required: true },
+  phone: { type: String, required: true },
+  service: { type: String, required: true },
+  eventDate: { type: Date, required: true },
+  message: String,
+  status: { 
+    type: String, 
+    default: 'pending', 
+    enum: ['pending', 'approved', 'rejected'] 
   },
-  { timestamps: true }
-);
+  approvedAt: Date,
+  createdAt: { type: Date, default: Date.now }
+});
 
-export default mongoose.model("Booking", bookingSchema);
+export default mongoose.model('Booking', bookingSchema);
