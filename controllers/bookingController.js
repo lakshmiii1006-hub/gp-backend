@@ -2,7 +2,7 @@ import Booking from "../models/Booking.js";
 import nodemailer from 'nodemailer';
 
 // ✅ SENDGRID (works everywhere)
-const transporter = nodemailer.createTransporter({
+const transporter = nodemailer.createTransport({
   host: "smtp.sendgrid.net",
   port: 587,
   secure: false, // true for 465, false for other ports
