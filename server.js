@@ -11,9 +11,9 @@ import testimonialRoutes from "./routes/testimonialRoutes.js";
 
 import contactRoutes from "./routes/contactRoutes.js";
 import eventRoutes from "./routes/eventRoutes.js";
-import inboxRoutes from "./routes/inboxRoutes.js";
 
-import sendMail from "./utils/sendMail.js";
+
+
 
 
 const app = express();
@@ -26,9 +26,9 @@ app.use(express.urlencoded({ extended: true }));
 /* ===================== ROUTES ===================== */
 app.use("/api/services", serviceRoutes);
 app.use("/api/testimonials", testimonialRoutes);
-app.use("/api/conact", contactRoutes);
-app.use("/api/inbox", inboxRoutes);
+
 app.use("/api/events", eventRoutes);
+app.use("/api/contacts", contactRoutes);
 
 /* ===================== HEALTH CHECK ===================== */
 app.get("/", (req, res) => {

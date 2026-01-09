@@ -1,13 +1,13 @@
+// backend/controllers/bookingController.js
 import Booking from "../models/Booking.js";
-import Inbox from "../models/Inbox.js";
+import Inbox from "../models/Inbox.js"; // ✅ make sure Inbox.js exists
 
-/* CREATE BOOKING */
 export const createBooking = async (req, res) => {
   try {
     const booking = await Booking.create(req.body);
     const bookingIdShort = booking._id.toString().slice(-6);
 
-    // ✅ Create Inbox messages instead of emails
+    // User inbox message
     const userMessage = {
       userEmail: booking.email,
       title: `Booking Confirmed! 🌸 ID: ${bookingIdShort}`,
@@ -17,8 +17,9 @@ export const createBooking = async (req, res) => {
       type: "booking",
     };
 
+    // Admin inbox message
     const adminMessage = {
-      userEmail: "admin@flowerdecor.com", // You can keep a global admin email or id
+      userEmail: "admin@flowerdecor.com", // your admin email or id
       title: `New Booking Received - ${bookingIdShort}`,
       message: `Booking from ${booking.name} (${booking.email}) for ${booking.eventType} on ${new Date(
         booking.eventDate
