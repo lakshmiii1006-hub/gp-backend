@@ -1,6 +1,7 @@
 import Contact from "../models/Contact.js";
 import nodemailer from "nodemailer";
 
+// Setup email transporter
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
@@ -9,70 +10,102 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-// CREATE contact (user sends message)
+// CREATE contact message
 export const createContact = async (req, res) => {
   try {
-    const contact = await Contact.create({
-      name: req.body.name,
-      email: req.body.email,
-      messages: [{ text: req.body.message, sender: "user" }],
-    });
+    const contact = await Contact.create(req.body);
 
+    // Emit real-time notification to admin
     const io = req.app.get("io");
     io.emit("new_contact", contact);
 
     res.status(201).json(contact);
-  } catch (err) {
-    console.error("Create contact error:", err);
-    res.status(500).json({ message: "Failed to create contact" });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
   }
 };
 
-// GET all contacts (admin)
+// GET all messages
 export const getContacts = async (req, res) => {
   try {
     const contacts = await Contact.find().sort({ createdAt: -1 });
     res.json(contacts);
-  } catch (err) {
-    console.error("Get contacts error:", err);
-    res.status(500).json({ message: "Failed to fetch contacts" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
 
-// REPLY to contact (admin)
+// GET single message
+export const getContactById = async (req, res) => {
+  try {
+    const contact = await Contact.findById(req.params.id);
+    if (!contact) return res.status(404).json({ message: "Contact not found" });
+    res.json(contact);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// UPDATE message (mark as read or update content)
+export const updateContact = async (req, res) => {
+  try {
+    const contact = await Contact.findById(req.params.id);
+    if (!contact) return res.status(404).json({ message: "Contact not found" });
+
+    if (req.body.name) contact.name = req.body.name;
+    if (req.body.email) contact.email = req.body.email;
+    if (req.body.message) contact.message = req.body.message;
+    if (req.body.isRead !== undefined) contact.isRead = req.body.isRead;
+
+    await contact.save();
+    res.json(contact);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+// DELETE message
+export const deleteContact = async (req, res) => {
+  try {
+    const contact = await Contact.findById(req.params.id);
+    if (!contact) return res.status(404).json({ message: "Contact not found" });
+
+    await contact.remove();
+    res.json({ message: "Contact deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// ADMIN replies to user
 export const replyContact = async (req, res) => {
   try {
     const contact = await Contact.findById(req.params.id);
-    if (!contact) return res.status(404).json({ message: "Not found" });
+    if (!contact) return res.status(404).json({ message: "Contact not found" });
 
-    const reply = { text: req.body.text, sender: "admin" };
-    contact.messages.push(reply);
+    const reply = {
+      text: req.body.text,
+      date: new Date(),
+    };
+
+    contact.replies.push(reply);
     await contact.save();
 
     const io = req.app.get("io");
-    io.emit("new_reply", { contactId: contact._id, reply });
+    io.emit("new_reply", { contactId: contact._id, reply, email: contact.email });
 
-    // SEND EMAIL TO USER always
+    // Send email notification
     await transporter.sendMail({
+      from: process.env.EMAIL_USER,
       to: contact.email,
-      subject: "📩 New reply from GP Flower Decorators",
-      text: `Hi ${contact.name},\n\nYou have a new reply:\n"${req.body.text}"\n\n- GP Flower Decorators Support`,
+      subject: "Admin replied to your message",
+      html: `<p>Hello ${contact.name},</p>
+             <p>Admin replied: ${reply.text}</p>
+             <p>Visit the website to continue chatting.</p>`,
     });
 
     res.json(contact);
-  } catch (err) {
-    console.error("Reply contact error:", err);
-    res.status(500).json({ message: "Reply failed" });
-  }
-};
-
-// DELETE contact (admin)
-export const deleteContact = async (req, res) => {
-  try {
-    await Contact.findByIdAndDelete(req.params.id);
-    res.json({ success: true });
-  } catch (err) {
-    console.error("Delete contact error:", err);
-    res.status(500).json({ message: "Delete failed" });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
   }
 };
