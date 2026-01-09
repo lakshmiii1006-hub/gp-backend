@@ -1,28 +1,51 @@
-// controllers/bookingController.js
 import Booking from "../models/Booking.js";
 import nodemailer from "nodemailer";
 
-export const updateBooking = async (req, res) => {
-  const { id } = req.params;
-  const { status, markRead } = req.body;
-
+// Create a new booking (customer submits form)
+export const createBooking = async (req, res) => {
   try {
-    // Find the booking
+    const { name, email, phone, service, date, additionalDetails } = req.body;
+
+    const booking = await Booking.create({
+      name,
+      email,
+      phone,
+      service,
+      date,
+      additionalDetails,
+      status: "pending",
+      read: false,
+      emailSent: false,
+    });
+
+    // Optional: notify admin via email here if you want
+    // ...
+
+    res.status(201).json({ success: true, booking });
+  } catch (err) {
+    console.error("Create booking error:", err);
+    res.status(500).json({ success: false, message: "Booking creation failed" });
+  }
+};
+
+// Update booking (admin approves/rejects)
+export const updateBooking = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body; // 'approved' or 'rejected'
+
     const booking = await Booking.findById(id);
-    if (!booking) return res.status(404).json({ message: "Booking not found" });
+    if (!booking) {
+      return res.status(404).json({ success: false, message: "Booking not found" });
+    }
 
-    // Update status if provided
-    if (status) booking.status = status;
+    booking.status = status;
 
-    // Update read/unread if provided
-    if (typeof markRead === "boolean") booking.read = markRead;
-
-    let emailSent = false;
-
-    // Send email to customer when admin approves
-    if (status === "confirmed" && !booking.emailSent) {
+    // If admin approves and email not yet sent, send email to customer
+    if (status === "approved" && !booking.emailSent) {
+      // configure transporter
       const transporter = nodemailer.createTransport({
-        service: "gmail",
+        service: "gmail", // or your preferred email service
         auth: {
           user: process.env.EMAIL_USER,
           pass: process.env.EMAIL_PASS,
@@ -32,28 +55,51 @@ export const updateBooking = async (req, res) => {
       const mailOptions = {
         from: process.env.EMAIL_USER,
         to: booking.email,
-        subject: "Your Booking is Confirmed ✅",
+        subject: "Your Booking is Approved 🌸",
         html: `
-          <h2>Hi ${booking.name},</h2>
-          <p>Your booking for <strong>${booking.service}</strong> on <strong>${new Date(booking.eventDate).toLocaleDateString()}</strong> has been confirmed by the admin.</p>
-          <p>Booking ID: <strong>#${booking._id.toString().slice(-6)}</strong></p>
-          <p>We look forward to making your event special! 🎉</p>
+          <h2>Hello ${booking.name},</h2>
+          <p>Your booking for <strong>${booking.service}</strong> on <strong>${new Date(
+          booking.date
+        ).toLocaleDateString()}</strong> has been <strong>approved</strong>.</p>
+          <p>Thank you for choosing us! We look forward to serving you.</p>
         `,
       };
 
-      try {
-        await transporter.sendMail(mailOptions);
-        emailSent = true;
-        booking.emailSent = true;
-      } catch (err) {
-        console.error("Failed to send email:", err);
-      }
+      await transporter.sendMail(mailOptions);
+      booking.emailSent = true;
     }
 
     await booking.save();
-    res.json({ success: true, booking, emailSent });
+    res.status(200).json({ success: true, booking });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Server error" });
+    console.error("Update booking error:", err);
+    res.status(500).json({ success: false, message: "Booking update failed" });
+  }
+};
+
+// Mark as read (when admin views the booking)
+export const markRead = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const booking = await Booking.findById(id);
+    if (!booking) return res.status(404).json({ success: false, message: "Booking not found" });
+
+    booking.read = true;
+    await booking.save();
+    res.status(200).json({ success: true, booking });
+  } catch (err) {
+    console.error("Mark read error:", err);
+    res.status(500).json({ success: false, message: "Failed to mark read" });
+  }
+};
+
+// Get all bookings
+export const getBookings = async (req, res) => {
+  try {
+    const bookings = await Booking.find().sort({ createdAt: -1 });
+    res.status(200).json({ success: true, bookings });
+  } catch (err) {
+    console.error("Get bookings error:", err);
+    res.status(500).json({ success: false, message: "Failed to fetch bookings" });
   }
 };
