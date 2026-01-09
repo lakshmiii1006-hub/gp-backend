@@ -31,28 +31,33 @@ router.post('/', async (req, res) => {
   }
 });
 
-// 3. APPROVE BOOKING + SEND EMAIL (Admin action)
 router.put('/:id/approve', async (req, res) => {
   try {
-    const { id } = req.params;
+    console.log('🚀 APPROVE REQUEST:', req.params.id);
     
-    // Update booking status
+    const { id } = req.params;
     const updatedBooking = await Booking.findByIdAndUpdate(
       id,
-      { 
-        status: 'approved', 
-        approvedAt: new Date() 
-      },
+      { status: 'approved', approvedAt: new Date() },
       { new: true }
     );
+
+    console.log('📋 BOOKING FOUND:', updatedBooking ? 'YES' : 'NO', updatedBooking?.email);
 
     if (!updatedBooking) {
       return res.status(404).json({ error: 'Booking not found' });
     }
 
-    // Send EmailJS confirmation to customer
+    // DEBUG: Log all EmailJS env vars (check Render logs)
+    console.log('📧 EMAILJS KEYS:', {
+      service: process.env.EMAILJS_SERVICE_ID ? 'SET' : 'MISSING',
+      template: process.env.EMAILJS_TEMPLATE_ID ? 'SET' : 'MISSING', 
+      public: process.env.EMAILJS_PUBLIC_KEY ? 'SET' : 'MISSING'
+    });
+
     const emailjs = await import('@emailjs/nodejs');
-    await emailjs.send({
+    
+    const result = await emailjs.send({
       service_id: process.env.EMAILJS_SERVICE_ID,
       template_id: process.env.EMAILJS_TEMPLATE_ID,
       user_id: process.env.EMAILJS_PUBLIC_KEY,
@@ -66,15 +71,13 @@ router.put('/:id/approve', async (req, res) => {
       }
     });
 
-    res.json({ 
-      success: true, 
-      message: '✅ Booking approved & email sent to customer!' 
-    });
+    console.log('✅ EMAIL SENT:', result);
+
+    res.json({ success: true, message: '✅ Email sent!' });
     
   } catch (error) {
-    console.error('Approval error:', error);
-    res.status(500).json({ error: 'Email failed' });
+    console.error('💥 FULL ERROR:', error.message);
+    console.error('💥 STACK:', error.stack);
+    res.status(500).json({ error: error.message });
   }
 });
-
-export default router;
