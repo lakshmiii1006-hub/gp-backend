@@ -1,40 +1,59 @@
-// backend/controllers/bookingController.js
+// controllers/bookingController.js
 import Booking from "../models/Booking.js";
-import Inbox from "../models/Inbox.js"; // ✅ make sure Inbox.js exists
+import nodemailer from "nodemailer";
 
-export const createBooking = async (req, res) => {
+export const updateBooking = async (req, res) => {
+  const { id } = req.params;
+  const { status, markRead } = req.body;
+
   try {
-    const booking = await Booking.create(req.body);
-    const bookingIdShort = booking._id.toString().slice(-6);
+    // Find the booking
+    const booking = await Booking.findById(id);
+    if (!booking) return res.status(404).json({ message: "Booking not found" });
 
-    // User inbox message
-    const userMessage = {
-      userEmail: booking.email,
-      title: `Booking Confirmed! 🌸 ID: ${bookingIdShort}`,
-      message: `Hello ${booking.name}, your booking for ${booking.eventType} on ${new Date(
-        booking.eventDate
-      ).toDateString()} has been confirmed!`,
-      type: "booking",
-    };
+    // Update status if provided
+    if (status) booking.status = status;
 
-    // Admin inbox message
-    const adminMessage = {
-      userEmail: "admin@flowerdecor.com", // your admin email or id
-      title: `New Booking Received - ${bookingIdShort}`,
-      message: `Booking from ${booking.name} (${booking.email}) for ${booking.eventType} on ${new Date(
-        booking.eventDate
-      ).toDateString()}.`,
-      type: "booking",
-    };
+    // Update read/unread if provided
+    if (typeof markRead === "boolean") booking.read = markRead;
 
-    await Inbox.create([userMessage, adminMessage]);
+    let emailSent = false;
 
-    res.status(201).json({
-      message: "Booking created successfully!",
-      bookingId: bookingIdShort,
-    });
-  } catch (error) {
-    console.error("❌ Booking error:", error);
-    res.status(500).json({ message: error.message });
+    // Send email to customer when admin approves
+    if (status === "confirmed" && !booking.emailSent) {
+      const transporter = nodemailer.createTransport({
+        service: "gmail",
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASS,
+        },
+      });
+
+      const mailOptions = {
+        from: process.env.EMAIL_USER,
+        to: booking.email,
+        subject: "Your Booking is Confirmed ✅",
+        html: `
+          <h2>Hi ${booking.name},</h2>
+          <p>Your booking for <strong>${booking.service}</strong> on <strong>${new Date(booking.eventDate).toLocaleDateString()}</strong> has been confirmed by the admin.</p>
+          <p>Booking ID: <strong>#${booking._id.toString().slice(-6)}</strong></p>
+          <p>We look forward to making your event special! 🎉</p>
+        `,
+      };
+
+      try {
+        await transporter.sendMail(mailOptions);
+        emailSent = true;
+        booking.emailSent = true;
+      } catch (err) {
+        console.error("Failed to send email:", err);
+      }
+    }
+
+    await booking.save();
+    res.json({ success: true, booking, emailSent });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
   }
 };
