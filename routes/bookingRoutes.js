@@ -1,9 +1,10 @@
-const express = require('express');
+import express from "express";
 const router = express.Router();
-const { createBooking, getBookings, approveBooking } = require('../controllers/bookingController');
 
-router.post('/bookings', createBooking);           // ✅ Form submission
-router.get('/bookings', getBookings);             // ✅ Admin loads table
-router.put('/bookings/:id/approve', approveBooking); // ✅ Approve button
+import { createBooking, getBookings, approveBooking } from "../controllers/bookingController.js";
 
-module.exports = router;
+router.post('/booking', createBooking);
+router.get('/booking', getBookings);
+router.put('/booking/:id/approve', approveBooking);
+
+export default router;  // ✅ FIXED
