@@ -17,6 +17,6 @@ router.get("/", getBookings);             // GET /api/booking  ✅
 // APPROVE booking
 router.put("/:id/approve", approveBooking); // PUT /api/booking/:id/approve
 
-router.delete("/bookings/:id", deleteBooking);
+router.delete("/booking/:id", deleteBooking);
 
 export default router;
