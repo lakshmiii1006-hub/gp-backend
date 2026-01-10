@@ -26,7 +26,7 @@ app.use(express.urlencoded({ extended: true }));
 /* ===================== ROUTES ===================== */
 app.use("/api/services", serviceRoutes);
 app.use("/api/testimonials", testimonialRoutes);
-app.use("/api/bookings", bookingRoutes);
+app.use("/api/booking", bookingRoutes);
 app.use("/api/events", eventRoutes);
 app.use("/api/contacts", contactRoutes);
 
