@@ -8,7 +8,7 @@ import cors from "cors";
 // Routes
 import serviceRoutes from "./routes/serviceRoutes.js";
 import testimonialRoutes from "./routes/testimonialRoutes.js";
-import bookingRoutes from "./routes/bookingRoutes.js";
+
 import contactRoutes from "./routes/contactRoutes.js";
 import eventRoutes from "./routes/eventRoutes.js";
 
@@ -26,7 +26,7 @@ app.use(express.urlencoded({ extended: true }));
 /* ===================== ROUTES ===================== */
 app.use("/api/services", serviceRoutes);
 app.use("/api/testimonials", testimonialRoutes);
-app.use("/api/bookings", bookingRoutes);
+
 app.use("/api/events", eventRoutes);
 app.use("/api/contacts", contactRoutes);
 
