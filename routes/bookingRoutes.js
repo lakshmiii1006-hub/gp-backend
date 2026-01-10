@@ -17,6 +17,6 @@ router.get("/", getBookings);             // GET /api/booking  ✅
 // APPROVE booking
 router.put("/:id/approve", approveBooking); // PUT /api/booking/:id/approve
 
-router.delete("/booking/:id", deleteBooking);
+router.delete("/:id", deleteBooking);  // ← CORRECT PATH
 
 export default router;
