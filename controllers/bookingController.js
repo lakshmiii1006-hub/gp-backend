@@ -34,6 +34,10 @@ export const approveBooking = async (req, res) => {  // ✅ MISSING THIS!
   }
 };
 export const deleteBooking = async (req, res) => {
-  await Booking.findByIdAndDelete(req.params.id);
-  res.json({ success: true });
+  try {
+    await Booking.findByIdAndDelete(req.params.id);
+    res.json({ success: true, message: "Booking deleted" });
+  } catch (err) {
+    res.status(500).json({ message: "Delete failed", error: err.message });
+  }
 };

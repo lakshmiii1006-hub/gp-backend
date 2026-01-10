@@ -4,7 +4,8 @@ const router = express.Router();
 import {
   createBooking,
   getBookings,
-  approveBooking
+  approveBooking,
+  deleteBooking
 } from "../controllers/bookingController.js";
 
 // CREATE booking
