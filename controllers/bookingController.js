@@ -33,3 +33,7 @@ export const approveBooking = async (req, res) => {  // ✅ MISSING THIS!
     res.status(500).json({ error: 'Approval failed' });
   }
 };
+export const deleteBooking = async (req, res) => {
+  await Booking.findByIdAndDelete(req.params.id);
+  res.json({ success: true });
+};
