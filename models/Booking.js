@@ -1,4 +1,5 @@
-const mongoose = require('mongoose');
+// models/Booking.js - COMPLETE FIXED FILE
+import mongoose from "mongoose";
 
 const bookingSchema = new mongoose.Schema({
   name: { type: String, required: true, trim: true },
@@ -14,4 +15,6 @@ const bookingSchema = new mongoose.Schema({
   }
 }, { timestamps: true });
 
-module.exports = mongoose.model('Booking', bookingSchema);
+const Booking = mongoose.model('Booking', bookingSchema);
+
+export default Booking;  // ✅ FIXED - ES6 default export
