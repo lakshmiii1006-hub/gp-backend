@@ -1,4 +1,4 @@
-// models/Booking.js - COMPLETE FIXED FILE
+// models/Booking.js
 import mongoose from "mongoose";
 
 const bookingSchema = new mongoose.Schema({
@@ -7,6 +7,7 @@ const bookingSchema = new mongoose.Schema({
   phone: { type: String, required: true },
   service: { type: String, required: true },
   eventDate: { type: Date, required: true },
+  budget: { type: String },  // ✅ ADDED - matches your frontend
   message: String,
   status: { 
     type: String, 
@@ -16,5 +17,4 @@ const bookingSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 const Booking = mongoose.model('Booking', bookingSchema);
-
-export default Booking;  // ✅ FIXED - ES6 default export
+export default Booking;
