@@ -1,6 +1,6 @@
 import express from "express";
 import { createEvent, getEvents, updateEvent, deleteEvent } from "../controllers/eventController.js";
-import upload from "../middleware/upload.js"; // Ensure this matches your folder structure
+import upload from "../middlewares/uploadMiddleware.js"; // Ensure this matches your folder structure
 
 const router = express.Router();
 
